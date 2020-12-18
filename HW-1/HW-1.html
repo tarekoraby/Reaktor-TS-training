@@ -81,7 +81,7 @@
         });
 
         products = products.concat(productResult);
-        addToTable(products.map(i => ({ id: i.id, name: i.name, type: i.type, price: i.price, availability: i.availability })));
+        addToTable(productResult.map(i => ({ id: i.id, name: i.name, type: i.type, price: i.price, availability: i.availability })));
     }
 
     async function populateAvailabilityData() {
