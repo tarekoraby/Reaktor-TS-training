@@ -1,0 +1,177 @@
+<html>
+
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.20/lodash.min.js"></script>
+    <style>
+        table {
+            width: 800px;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 5px;
+        }
+
+        th {
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body>
+    <h3>TS Training HW1</h3>
+    <h1 id="status">Fetching product data ... </h1>
+</body>
+<script>
+    var tbl = document.createElement('table');
+    addRow('Name', 'Type', 'Price', "Availability");
+    document.body.appendChild(tbl);
+
+    var products = [];
+    var availabilities = {};
+    var countFetchingInProgress = 0;
+
+    run();
+
+    async function run() {
+        await populateProductData();
+        await populateAvailabilityData();
+    }
+
+    async function populateProductData() {
+        console.log("Populating product data started!!");
+        const jackets = fetchRepos("https://bad-api-assignment.reaktor.com/products/jackets");
+        const shirts = fetchRepos("https://bad-api-assignment.reaktor.com/products/shirts");
+        const accessories = fetchRepos("https://bad-api-assignment.reaktor.com/products/accessories");
+
+        [jackets, shirts, accessories].forEach(promise => promise.then(result => {
+            updateProductData(result);
+            console.log("Processing product callback ... ");
+        }));
+
+        await Promise.all([jackets, shirts, accessories]);
+        console.log("Populating product data done!!");
+    }
+
+    async function fetchRepos(url) {
+        const response = await fetch(url, {
+            headers: {
+                'x-force-error-mode': 'none'
+            }
+        });
+        if (response.status != 200) {
+            throw Error("FAILED TO FETCH");
+        }
+
+        json = await response.json();
+
+        return json;
+    }
+
+    function updateProductData(productResult) {
+        productResult.forEach(elem => {
+            elem.availability = "";
+        });
+
+        products = products.concat(productResult);
+        addToTable(products.map(i => ({ id: i.id, name: i.name, type: i.type, price: i.price, availability: i.availability })));
+    }
+
+    async function populateAvailabilityData() {
+        console.log("Populating availability data started!!");
+        const manufacturers = Array.from(new Set(products.map(i => i.manufacturer)));
+        document.querySelector("#status").innerHTML = "Fetching availability data ...";
+        promises = [];
+        manufacturers.map((m) => {
+            promise = updateAvailabilityData(m);
+            promises.push(promise);
+            promise.then(manufacturer => {
+                updateProductWithAvailability(manufacturer);
+                console.log("Processing availability callback of manufacturer: " + manufacturer);
+            });
+        });
+
+        await Promise.all(promises);
+        console.log("Populating availability data done!!");
+    }
+
+    async function updateAvailabilityData(manufacturer) {
+        countFetchingInProgress++;
+        const url = "https://bad-api-assignment.reaktor.com/availability/" + manufacturer;
+        const response = await fetch(url, {
+            headers: {
+                'x-force-error-mode': 'none'
+            }
+        });
+        if (response.status != 200) {
+            throw Error("FAILED TO FETCH");
+        }
+
+        json = await response.json();
+
+        responseContent = json.response;
+
+        if (json == [] || responseContent == "[]") {
+            return updateAvailabilityData(manufacturer);
+        }
+
+        this.availabilities[manufacturer] = _.sortBy(responseContent, r => r.id);
+        this.availabilities[manufacturer].forEach(elem => {
+            elem.id = elem.id.toLowerCase();
+            elem.availability = elem.DATAPAYLOAD.match(/(?<=<INSTOCKVALUE>)(.*)(?=<\/INSTOCKVALUE>)/)[0].toLowerCase();
+        });
+
+        return manufacturer;
+    }
+
+    function updateProductWithAvailability(manufacturer) {
+        const idsArray = this.availabilities[manufacturer].map(i => i.id);
+        this.products.forEach(elem => {
+            if (elem.manufacturer == manufacturer) {
+                index = _.sortedIndexOf(idsArray, elem.id);
+                if (index != -1) {
+                    elem.availability = this.availabilities[manufacturer][index].availability;
+                }
+            }
+        });
+
+        recreateTable(products.map(i => ({ id: i.id, name: i.name, type: i.type, price: i.price, availability: i.availability })));
+
+        countFetchingInProgress--;
+        if (countFetchingInProgress == 0)
+            document.querySelector("#status").innerHTML = "Done !!!";
+    }
+
+    function addToTable(items) {
+        var i;
+        for (i = 0; i < items.length; i++) {
+            addRow(items[i].name, items[i].type, items[i].price, items[i].availability);
+        }
+    }
+
+    function recreateTable(items) {
+        tbl.innerHTML = "";
+        addRow('Name', 'Type', 'Price', "Availability");
+
+        addToTable(items);
+    }
+
+    function addRow(name, type, price, availability) {
+        var tr = tbl.insertRow();
+
+        tr.insertCell().appendChild(document.createTextNode(name));
+        tr.insertCell().appendChild(document.createTextNode(type));
+        tr.insertCell().appendChild(document.createTextNode(price));
+        tr.insertCell().appendChild(document.createTextNode(availability));
+    }
+
+</script>
+
+</html>
