@@ -81,7 +81,7 @@
         });
 
         products = products.concat(productResult);
-        addToTable(productResult.map(i => ({ id: i.id, name: i.name, type: i.type, price: i.price, availability: i.availability })));
+        addToTable(productResult);
     }
 
     async function populateAvailabilityData() {
@@ -142,7 +142,7 @@
             }
         });
 
-        recreateTable(products.map(i => ({ id: i.id, name: i.name, type: i.type, price: i.price, availability: i.availability })));
+        recreateTable(products);
 
         countFetchingInProgress--;
         if (countFetchingInProgress == 0)
