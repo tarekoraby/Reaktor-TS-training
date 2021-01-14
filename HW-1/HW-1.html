@@ -30,6 +30,7 @@
     <h1 id="status">Fetching product data ... </h1>
 </body>
 <script>
+    "use strict";
     var tbl = document.createElement('table');
     addRow('Name', 'Type', 'Price', "Availability");
     document.body.appendChild(tbl);
@@ -70,7 +71,7 @@
             throw Error("FAILED TO FETCH");
         }
 
-        json = await response.json();
+        const json = await response.json();
 
         return json;
     }
@@ -88,9 +89,9 @@
         console.log("Populating availability data started!!");
         const manufacturers = Array.from(new Set(products.map(i => i.manufacturer)));
         document.querySelector("#status").innerHTML = "Fetching availability data ...";
-        promises = [];
+        const promises = [];
         manufacturers.map((m) => {
-            promise = updateAvailabilityData(m);
+            const promise = updateAvailabilityData(m);
             promises.push(promise);
             promise.then(manufacturer => {
                 updateProductWithAvailability(manufacturer);
@@ -114,16 +115,16 @@
             throw Error("FAILED TO FETCH");
         }
 
-        json = await response.json();
+        const json = await response.json();
 
-        responseContent = json.response;
+        const responseContent = json.response;
 
         if (json == [] || responseContent == "[]") {
             return updateAvailabilityData(manufacturer);
         }
 
-        this.availabilities[manufacturer] = _.sortBy(responseContent, r => r.id);
-        this.availabilities[manufacturer].forEach(elem => {
+        availabilities[manufacturer] = _.sortBy(responseContent, r => r.id);
+        availabilities[manufacturer].forEach(elem => {
             elem.id = elem.id.toLowerCase();
             elem.availability = elem.DATAPAYLOAD.match(/(?<=<INSTOCKVALUE>)(.*)(?=<\/INSTOCKVALUE>)/)[0].toLowerCase();
         });
@@ -132,12 +133,12 @@
     }
 
     function updateProductWithAvailability(manufacturer) {
-        const idsArray = this.availabilities[manufacturer].map(i => i.id);
-        this.products.forEach(elem => {
+        const idsArray = availabilities[manufacturer].map(i => i.id);
+        products.forEach(elem => {
             if (elem.manufacturer == manufacturer) {
-                index = _.sortedIndexOf(idsArray, elem.id);
+                const index = _.sortedIndexOf(idsArray, elem.id);
                 if (index != -1) {
-                    elem.availability = this.availabilities[manufacturer][index].availability;
+                    elem.availability = availabilities[manufacturer][index].availability;
                 }
             }
         });
