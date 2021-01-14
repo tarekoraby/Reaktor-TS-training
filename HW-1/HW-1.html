@@ -123,7 +123,7 @@
         const responseContent = json.response;
 
         if (json == [] || responseContent == "[]") {
-            return updateAvailabilityData(manufacturer);
+            return updateAvailabilityData(manufacturer, products, availabilities);
         }
 
         availabilities[manufacturer] = _.sortBy(responseContent, r => r.id);
