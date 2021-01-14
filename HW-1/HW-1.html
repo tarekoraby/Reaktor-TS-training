@@ -34,16 +34,14 @@
     var tbl = document.createElement('table');
     addRow('Name', 'Type', 'Price', "Availability");
     document.body.appendChild(tbl);
-
-    var products = [];
-    var availabilities = {};
+    
     var countFetchingInProgress = 0;
 
     run();
 
     async function run() {
-        await populateProductData();
-        await populateAvailabilityData();
+        const products = await populateProductData();
+        await populateAvailabilityData(products);
     }
 
     async function populateProductData() {
@@ -52,13 +50,16 @@
         const shirts = fetchRepos("https://bad-api-assignment.reaktor.com/products/shirts");
         const accessories = fetchRepos("https://bad-api-assignment.reaktor.com/products/accessories");
 
+        const products = [];
+
         [jackets, shirts, accessories].forEach(promise => promise.then(result => {
-            updateProductData(result);
+            updateProductData(result, products);
             console.log("Processing product callback ... ");
         }));
 
         await Promise.all([jackets, shirts, accessories]);
         console.log("Populating product data done!!");
+        return products.flat();
     }
 
     async function fetchRepos(url) {
@@ -76,25 +77,27 @@
         return json;
     }
 
-    function updateProductData(productResult) {
+    function updateProductData(productResult, products) {
         productResult.forEach(elem => {
             elem.availability = "";
         });
 
-        products = products.concat(productResult);
+        products.push(productResult);
         addToTable(productResult);
     }
 
-    async function populateAvailabilityData() {
+    async function populateAvailabilityData(products) {
         console.log("Populating availability data started!!");
+        
+        var availabilities = {};
         const manufacturers = Array.from(new Set(products.map(i => i.manufacturer)));
         document.querySelector("#status").innerHTML = "Fetching availability data ...";
         const promises = [];
         manufacturers.map((m) => {
-            const promise = updateAvailabilityData(m);
+            const promise = updateAvailabilityData(m, products, availabilities);
             promises.push(promise);
             promise.then(manufacturer => {
-                updateProductWithAvailability(manufacturer);
+                updateProductWithAvailability(manufacturer, products, availabilities);
                 console.log("Processing availability callback of manufacturer: " + manufacturer);
             });
         });
@@ -103,7 +106,7 @@
         console.log("Populating availability data done!!");
     }
 
-    async function updateAvailabilityData(manufacturer) {
+    async function updateAvailabilityData(manufacturer, products, availabilities) {
         countFetchingInProgress++;
         const url = "https://bad-api-assignment.reaktor.com/availability/" + manufacturer;
         const response = await fetch(url, {
@@ -111,7 +114,7 @@
                 'x-force-error-mode': 'none'
             }
         });
-        if (response.status != 200) {
+        if (response.status != 200) { 
             throw Error("FAILED TO FETCH");
         }
 
@@ -132,7 +135,7 @@
         return manufacturer;
     }
 
-    function updateProductWithAvailability(manufacturer) {
+    function updateProductWithAvailability(manufacturer, products, availabilities) {
         const idsArray = availabilities[manufacturer].map(i => i.id);
         products.forEach(elem => {
             if (elem.manufacturer == manufacturer) {
