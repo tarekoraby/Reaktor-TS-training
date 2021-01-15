@@ -46,9 +46,9 @@
 
     async function populateProductData() {
         console.log("Populating product data started!!");
-        const jackets = fetchRepos("https://bad-api-assignment.reaktor.com/products/jackets");
-        const shirts = fetchRepos("https://bad-api-assignment.reaktor.com/products/shirts");
-        const accessories = fetchRepos("https://bad-api-assignment.reaktor.com/products/accessories");
+        const jackets = fetchData("https://bad-api-assignment.reaktor.com/products/jackets");
+        const shirts = fetchData("https://bad-api-assignment.reaktor.com/products/shirts");
+        const accessories = fetchData("https://bad-api-assignment.reaktor.com/products/accessories");
 
         const products = [];
 
@@ -62,7 +62,7 @@
         return products.flat();
     }
 
-    async function fetchRepos(url) {
+    async function fetchData(url) {
         const response = await fetch(url, {
             headers: {
                 'x-force-error-mode': 'none'
@@ -108,18 +108,8 @@
 
     async function updateAvailabilityData(manufacturer, products, availabilities) {
         countFetchingInProgress++;
-        const url = "https://bad-api-assignment.reaktor.com/availability/" + manufacturer;
-        const response = await fetch(url, {
-            headers: {
-                'x-force-error-mode': 'none'
-            }
-        });
-        if (response.status != 200) { 
-            throw Error("FAILED TO FETCH");
-        }
 
-        const json = await response.json();
-
+        const json = await fetchData("https://bad-api-assignment.reaktor.com/availability/" + manufacturer);
         const responseContent = json.response;
 
         if (json == [] || responseContent == "[]") {
