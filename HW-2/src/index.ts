@@ -8,8 +8,6 @@ document.body.appendChild(tbl);
 
 let countFetchingInProgress = 0;
 
-type FetchedDetails = ProdcutDetails | AvailabilityDetails;
-
 interface ProdcutDetails {
   id: string;
   name: string;
